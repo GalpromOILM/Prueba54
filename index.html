@@ -107,7 +107,7 @@ button:active { opacity: 0.9; }
   <button onclick="login()">Entrar</button>
 
   <div class="footer">Elaborado por: OILM</div>
-  <div class="error" id="error">Datos incorrectos</div>
+  <div class="error" id="error"></div>
 
 </div>
 
@@ -118,9 +118,10 @@ button:active { opacity: 0.9; }
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwTZZReksD0TzEuB2xGDS8Iex2IxiXkfArpD3rUJ146-Zx9V3Nkua48-6siZSuzeELJIg/exec";
 
 /* =========================
-   LOGIN (SIN CORS)
+   LOGIN SEGURO
 ========================= */
-function login() {
+async function login() {
+
   const user = usuario.value.trim();
   const pass = password.value.trim();
   const error = document.getElementById("error");
@@ -132,30 +133,42 @@ function login() {
     return;
   }
 
-  fetch(SCRIPT_URL, {
-    method: "POST",
-    mode: "no-cors",
-    headers: { "Content-Type": "text/plain" },
-    body: JSON.stringify({
-      action: "login",
-      usuario: user,
-      password: pass
-    })
-  })
-  .then(() => {
-    // Sesión local mínima (evita rebote)
+  try {
+    const res = await fetch(SCRIPT_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "login",
+        usuario: user,
+        password: pass
+      })
+    });
+
+    const data = await res.json();
+
+    // 🔐 VALIDACIÓN REAL
+    if (!data.ok) {
+      error.innerText = "Usuario o contraseña incorrectos";
+      error.style.display = "block";
+      return;
+    }
+
+    // 🔒 Limpia sesiones previas
+    localStorage.clear();
+
+    // ✅ Guarda sesión válida
     localStorage.setItem("usuario", JSON.stringify({
-      usuario: user,
-      nombre: user,
-      rol: "usuario"
+      usuario: data.usuario,
+      rol: data.rol
     }));
 
-    window.location.href = "remision.html";
-  })
-  .catch(() => {
-    error.innerText = "Error de conexión";
+    // 👉 Nuevo flujo
+    window.location.href = "menu.html";
+
+  } catch (e) {
+    error.innerText = "Error de conexión con el servidor";
     error.style.display = "block";
-  });
+  }
 }
 
 /* =========================
