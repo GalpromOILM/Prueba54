@@ -3,111 +3,101 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Acceso Remisiones</title>
+<title>Remisión de Entrega</title>
 
 <style>
-* { box-sizing: border-box; }
-
-body {
-  font-family: Arial, sans-serif;
-  background: #f4f6f8;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  margin: 0;
+*{box-sizing:border-box}
+body{font-family:Arial,Helvetica,sans-serif;background:#f4f6f8;margin:0;padding:15px}
+.container{max-width:600px;margin:auto;background:#fff;border-radius:12px;padding:16px;box-shadow:0 4px 12px rgba(0,0,0,.08)}
+.encabezado{text-align:center;margin-bottom:12px}
+.encabezado img{max-width:280px;max-height:120px;object-fit:contain}
+.folio{font-size:14px;font-weight:bold;margin-top:6px}
+.estado{font-size:13px;color:#e67e22;margin-top:4px}
+h2{text-align:center;margin-top:6px}
+label{font-weight:bold;display:block;margin-top:14px}
+input,select,textarea,button{
+  width:100%;padding:12px;margin-top:6px;
+  border-radius:8px;border:1px solid #ccc;font-size:15px
 }
-
-.card {
-  background: #fff;
-  padding: 20px;
-  border-radius: 14px;
-  width: calc(100% - 24px);
-  max-width: 340px;
-  box-shadow: 0 10px 25px rgba(0,0,0,.1);
-}
-
-.logo-carousel {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 80px;
-  margin-bottom: 10px;
-  position: relative;
-}
-
-.logo {
-  max-height: 60px;
-  max-width: 180px;
-  position: absolute;
-  opacity: 0;
-  transition: opacity 0.6s ease;
-}
-
-.logo.active { opacity: 1; }
-
-h2 {
-  text-align: center;
-  margin: 10px 0 20px;
-}
-
-input {
-  width: 100%;
-  padding: 12px;
-  margin-bottom: 12px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  font-size: 15px;
-}
-
-button {
-  width: 100%;
-  padding: 14px;
-  border: none;
-  border-radius: 8px;
-  background: #4ca494;
-  color: white;
-  font-size: 16px;
-  cursor: pointer;
-}
-
-button:active { opacity: 0.9; }
-
-.footer {
-  text-align: center;
-  margin-top: 14px;
-  font-size: 12px;
-  color: #999;
-}
-
-.error {
-  color: #c0392b;
-  text-align: center;
-  margin-top: 10px;
-  display: none;
-}
+textarea{resize:vertical}
+button{background:#4ca494;color:#fff;border:none;cursor:pointer}
+.producto{border:1px solid #ddd;border-radius:8px;padding:10px;margin-top:10px}
+.firma-box{border:2px dashed #aaa;border-radius:8px;margin-top:10px}
+canvas{width:100%;height:180px}
+.actions{display:flex;gap:10px;margin-top:12px}
+.actions button{flex:1}
+.eliminar{background:#e74c3c;font-size:14px}
+.preview{display:flex;flex-wrap:wrap}
+.preview img{width:80px;margin:6px;border-radius:6px;border:1px solid #ccc}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 </style>
 </head>
 
 <body>
 
-<div class="card">
+<script>
+/* =========================
+   PROTECCIÓN DE ACCESO
+========================= */
+const usuario = JSON.parse(localStorage.getItem("usuario"));
+if(!usuario || !usuario.usuario){
+  window.location.href = "index.html";
+}
+</script>
 
-  <div class="logo-carousel">
-    <img src="logos/empresa1.png" class="logo active">
-    <img src="logos/empresa2.png" class="logo">
-    <img src="logos/empresa3.png" class="logo">
+<div class="container">
+
+  <div class="encabezado">
+    <img id="logoEmpresa">
+    <div class="folio" id="folio"></div>
+    <div class="estado">Estado: Pendiente</div>
   </div>
 
-  <h2>Acceso</h2>
+  <h2>Remisión de Entrega</h2>
 
-  <input type="text" id="usuario" placeholder="Usuario">
-  <input type="password" id="password" placeholder="Contraseña">
+  <label>Empresa</label>
+  <select id="empresa">
+    <option value="empresa1">Galprom</option>
+    <option value="empresa2">Dicomete</option>
+    <option value="empresa3">Metahnos</option>
+  </select>
 
-  <button onclick="login()">Entrar</button>
+  <label>Horario de entrega</label>
+  <div class="grid-2">
+    <select id="horaInicio"></select>
+    <select id="horaFin"></select>
+  </div>
 
-  <div class="footer">Elaborado por: OILM</div>
-  <div class="error" id="error">Datos incorrectos</div>
+  <label>Cliente</label>
+  <input id="cliente">
+
+  <label>Correo</label>
+  <input type="email" id="correo">
+
+  <label>Dirección</label>
+  <textarea id="direccion" rows="3"></textarea>
+
+  <label>Productos</label>
+  <div id="productos"></div>
+  <button onclick="agregarProducto()">➕ Agregar producto</button>
+
+  <label>Fotos de evidencia</label>
+  <input type="file" id="evidencias" accept="image/*" multiple capture="environment">
+  <div id="preview" class="preview"></div>
+
+  <label>Firma del cliente</label>
+  <div class="firma-box">
+    <canvas id="firma"></canvas>
+  </div>
+
+  <div class="actions">
+    <button onclick="limpiarFirma()">Limpiar firma</button>
+  </div>
+
+  <div class="actions">
+    <button onclick="guardarPendiente()">💾 Dejar pendiente</button>
+    <button onclick="cerrarEntrega()">✅ Cerrar entrega</button>
+  </div>
 
 </div>
 
@@ -118,56 +108,173 @@ button:active { opacity: 0.9; }
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwTZZReksD0TzEuB2xGDS8Iex2IxiXkfArpD3rUJ146-Zx9V3Nkua48-6siZSuzeELJIg/exec";
 
 /* =========================
-   LOGIN (SIN CORS)
+   EMPRESAS
 ========================= */
-function login() {
-  const user = usuario.value.trim();
-  const pass = password.value.trim();
-  const error = document.getElementById("error");
-  error.style.display = "none";
+const empresas = {
+  empresa1:{logo:"logos/empresa1.png",color:"#4ca494"},
+  empresa2:{logo:"logos/empresa2.png",color:"#3498db"},
+  empresa3:{logo:"logos/empresa3.png",color:"#9b59b6"}
+};
 
-  if (!user || !pass) {
-    error.innerText = "Completa los datos";
-    error.style.display = "block";
-    return;
+empresa.onchange = () => {
+  logoEmpresa.src = empresas[empresa.value].logo;
+  document.querySelectorAll("button").forEach(b=>b.style.background=empresas[empresa.value].color);
+};
+empresa.onchange();
+
+/* =========================
+   HORAS
+========================= */
+function cargarHoras(){
+  horaInicio.innerHTML = `<option value="">Inicio</option>`;
+  horaFin.innerHTML = `<option value="">Término</option>`;
+  for(let h=6;h<=22;h++){
+    ["00","30"].forEach(m=>{
+      const v = String(h).padStart(2,"0")+":"+m;
+      horaInicio.innerHTML += `<option>${v}</option>`;
+      horaFin.innerHTML += `<option>${v}</option>`;
+    });
   }
+}
+cargarHoras();
 
-  fetch(SCRIPT_URL, {
-    method: "POST",
-    mode: "no-cors",
-    headers: { "Content-Type": "text/plain" },
-    body: JSON.stringify({
-      action: "login",
-      usuario: user,
-      password: pass
-    })
-  })
-  .then(() => {
-    // Sesión local mínima (evita rebote)
-    localStorage.setItem("usuario", JSON.stringify({
-      usuario: user,
-      nombre: user,
-      rol: "usuario"
-    }));
+/* =========================
+   FOLIO
+========================= */
+let folioLocal = localStorage.getItem("folioLocal") || "TMP-"+Date.now();
+localStorage.setItem("folioLocal", folioLocal);
+folio.innerText = "Folio: "+folioLocal;
 
-    window.location.href = "remision.html";
-  })
-  .catch(() => {
-    error.innerText = "Error de conexión";
-    error.style.display = "block";
+/* =========================
+   PRODUCTOS
+========================= */
+function agregarProducto(){
+  const d=document.createElement("div");
+  d.className="producto";
+  d.innerHTML=`
+    <input placeholder="Producto">
+    <input type="number" placeholder="Cantidad">
+    <input placeholder="Observaciones">
+    <button class="eliminar" onclick="this.parentNode.remove()">Eliminar</button>
+  `;
+  productos.appendChild(d);
+}
+agregarProducto();
+
+/* =========================
+   FOTOS
+========================= */
+evidencias.onchange = ()=>{
+  preview.innerHTML="";
+  [...evidencias.files].forEach(f=>{
+    const i=document.createElement("img");
+    i.src=URL.createObjectURL(f);
+    preview.appendChild(i);
   });
+};
+
+function archivosABase64(files){
+  return Promise.all([...files].map(f=>new Promise(r=>{
+    const rd=new FileReader();
+    rd.onload=()=>r(rd.result);
+    rd.readAsDataURL(f);
+  })));
 }
 
 /* =========================
-   CARRUSEL LOGOS
+   FIRMA
 ========================= */
-let logos = document.querySelectorAll('.logo');
-let index = 0;
-setInterval(() => {
-  logos[index].classList.remove('active');
-  index = (index + 1) % logos.length;
-  logos[index].classList.add('active');
-}, 2500);
+const canvas = document.getElementById("firma");
+const ctx = canvas.getContext("2d");
+canvas.width = canvas.offsetWidth;
+canvas.height = 180;
+let draw=false;
+
+canvas.addEventListener("touchstart",()=>draw=true);
+canvas.addEventListener("touchend",()=>{draw=false;ctx.beginPath()});
+canvas.addEventListener("touchmove",e=>{
+  if(!draw) return;
+  const r=canvas.getBoundingClientRect(),t=e.touches[0];
+  ctx.lineWidth=2;ctx.lineCap="round";
+  ctx.lineTo(t.clientX-r.left,t.clientY-r.top);
+  ctx.stroke();ctx.beginPath();
+  ctx.moveTo(t.clientX-r.left,t.clientY-r.top);
+  e.preventDefault();
+});
+
+function limpiarFirma(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+}
+
+/* =========================
+   GUARDAR PENDIENTE
+========================= */
+function guardarPendiente(){
+  const pendientes = JSON.parse(localStorage.getItem("pendientes")) || [];
+  pendientes.push({
+    folio: folioLocal,
+    empresa: empresa.value,
+    cliente: cliente.value,
+    correo: correo.value,
+    direccion: direccion.value,
+    productos: [...document.querySelectorAll(".producto")].map(p=>({
+      nombre:p.children[0].value,
+      cantidad:p.children[1].value,
+      observaciones:p.children[2].value
+    })),
+    usuario,
+    timestamp:Date.now()
+  });
+  localStorage.setItem("pendientes", JSON.stringify(pendientes));
+  alert("Remisión guardada como pendiente");
+  window.location.href="pendientes.html";
+}
+
+/* =========================
+   CERRAR ENTREGA
+========================= */
+async function cerrarEntrega(){
+  if(!horaInicio.value || !horaFin.value){
+    alert("Selecciona horario");
+    return;
+  }
+
+  const img = ctx.getImageData(0,0,canvas.width,canvas.height).data;
+  if ([...img].every(v=>v===0)){
+    alert("La firma es obligatoria");
+    return;
+  }
+
+  const fotos = await archivosABase64(evidencias.files);
+
+  await fetch(SCRIPT_URL,{
+    method:"POST",
+    mode:"no-cors",
+    headers:{ "Content-Type":"text/plain" },
+    body:JSON.stringify({
+      action:"guardarRemision",
+      remision:{
+        empresa:empresa.value,
+        horario:{inicio:horaInicio.value,fin:horaFin.value},
+        cliente:cliente.value,
+        correo:correo.value,
+        direccion:direccion.value,
+        productos:[...document.querySelectorAll(".producto")].map(p=>({
+          nombre:p.children[0].value,
+          cantidad:p.children[1].value,
+          observaciones:p.children[2].value
+        })),
+        fotos,
+        firma:canvas.toDataURL(),
+        estado:"entregada"
+      }
+    })
+  });
+
+  alert("Remisión enviada");
+  localStorage.removeItem("folioLocal");
+  window.location.reload();
+}
 </script>
 
 </body>
