@@ -48,9 +48,11 @@ if (!usuario || !usuario.usuario || !usuario.rol) {
 
 const pendientes = JSON.parse(localStorage.getItem("pendientes")) || [];
 const params = new URLSearchParams(window.location.search);
+
 if (pendientes.length > 0 && !params.get("folio")) {
   window.location.href = "pendientes.html";
 }
+
 </script>
 
 <div class="container">
@@ -273,3 +275,4 @@ async function cerrarEntrega(){
 
 </body>
 </html>
+
