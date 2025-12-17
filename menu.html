@@ -3,139 +3,113 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Menú de Remisiones</title>
+<title>Menú Principal</title>
 
 <style>
-*{box-sizing:border-box}
+* { box-sizing: border-box; }
 
-body{
-  font-family:Arial,Helvetica,sans-serif;
-  background:#f4f6f8;
-  margin:0;
-  padding:20px;
+body {
+  font-family: Arial, sans-serif;
+  background: #f4f6f8;
+  margin: 0;
+  padding: 20px;
 }
 
-.container{
-  max-width:420px;
-  margin:auto;
-  background:#fff;
-  border-radius:16px;
-  padding:22px;
-  box-shadow:0 8px 24px rgba(0,0,0,.1);
+.container {
+  max-width: 420px;
+  margin: auto;
+  background: #fff;
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: 0 10px 25px rgba(0,0,0,.1);
 }
 
-h2{
-  text-align:center;
-  margin-top:0;
+h2 {
+  text-align: center;
+  margin-top: 0;
 }
 
-.usuario{
-  text-align:center;
-  font-size:14px;
-  color:#666;
-  margin-bottom:20px;
+.user {
+  text-align: center;
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 20px;
 }
 
-.btn{
-  width:100%;
-  padding:16px;
-  margin-top:12px;
-  border:none;
-  border-radius:10px;
-  font-size:16px;
-  color:#fff;
-  cursor:pointer;
+button {
+  width: 100%;
+  padding: 14px;
+  margin-bottom: 12px;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  cursor: pointer;
 }
 
-.btn-nueva{ background:#4ca494 }
-.btn-pendientes{ background:#f39c12 }
-.btn-terminadas{ background:#3498db }
-.btn-salir{ background:#e74c3c }
+.btn-main { background: #4ca494; color: #fff; }
+.btn-sec  { background: #6b8cbc; color: #fff; }
+.btn-alt  { background: #95a5a6; color: #fff; }
+.btn-out  { background: #e74c3c; color: #fff; }
 
-.btn:active{ opacity:.9 }
+button:active { opacity: 0.9; }
 
-.footer{
-  text-align:center;
-  margin-top:18px;
-  font-size:12px;
-  color:#999;
+.error {
+  color: #c0392b;
+  text-align: center;
+  margin-top: 10px;
 }
 </style>
 </head>
 
 <body>
 
-<script>
-/* =========================
-   PROTECCIÓN DE SESIÓN
-========================= */
-const usuario = JSON.parse(localStorage.getItem("usuario"));
-if (!usuario || !usuario.usuario || !usuario.rol) {
-  localStorage.clear();
-  window.location.href = "index.html";
-}
-</script>
-
 <div class="container">
 
-  <h2>Menú principal</h2>
+  <h2>Menú</h2>
+  <div class="user" id="usuarioTxt"></div>
 
-  <div class="usuario">
-    Usuario: <b id="nombreUsuario"></b>
-  </div>
+  <button class="btn-main" onclick="nuevaRemision()">➕ Nueva remisión</button>
+  <button class="btn-sec" onclick="verPendientes()">📋 Remisiones pendientes</button>
+  <button class="btn-alt" onclick="verTerminadas()">✅ Remisiones terminadas</button>
+  <button class="btn-out" onclick="logout()">🚪 Cerrar sesión</button>
 
-  <button class="btn btn-nueva" onclick="nuevaRemision()">
-    ➕ Nueva remisión
-  </button>
-
-  <button class="btn btn-pendientes" onclick="verPendientes()">
-    📋 Remisiones pendientes
-  </button>
-
-  <button class="btn btn-terminadas" onclick="verTerminadas()">
-    ✅ Remisiones terminadas
-  </button>
-
-  <button class="btn btn-salir" onclick="cerrarSesion()">
-    🚪 Cerrar sesión
-  </button>
-
-  <div class="footer">
-    Sistema de Remisiones
-  </div>
+  <div class="error" id="error"></div>
 
 </div>
 
 <script>
 /* =========================
-   INIT
+   VALIDAR SESIÓN
 ========================= */
-document.getElementById("nombreUsuario").innerText = usuario.usuario;
+const usuarioSesion = sessionStorage.getItem("auth_user");
+
+if (!usuarioSesion) {
+  // ❌ No hay sesión → login
+  window.location.href = "index.html";
+} else {
+  document.getElementById("usuarioTxt").innerText =
+    "Usuario: " + usuarioSesion;
+}
 
 /* =========================
    ACCIONES
 ========================= */
-function nuevaRemision(){
-  // Si hay pendientes, envía primero ahí
-  const pendientes = JSON.parse(localStorage.getItem("pendientes")) || [];
-  if(pendientes.length > 0){
-    window.location.href = "pendientes.html";
-  } else {
-    window.location.href = "remision.html";
-  }
+function nuevaRemision() {
+  window.location.href = "remision.html";
 }
 
-function verPendientes(){
+function verPendientes() {
   window.location.href = "pendientes.html";
 }
 
-function verTerminadas(){
-  window.location.href = "terminadas.html";
+function verTerminadas() {
+  alert("Vista de remisiones terminadas (siguiente paso)");
+  // luego será: terminadas.html
 }
 
-function cerrarSesion(){
-  if(!confirm("¿Cerrar sesión?")) return;
+function logout() {
   localStorage.clear();
+  sessionStorage.clear();
   window.location.href = "index.html";
 }
 </script>
