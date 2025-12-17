@@ -6,84 +6,72 @@
 <title>Acceso Remisiones</title>
 
 <style>
-* { box-sizing: border-box; }
-
-body {
-  font-family: Arial, sans-serif;
-  background: #f4f6f8;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  margin: 0;
+*{box-sizing:border-box}
+body{
+  font-family:Arial,sans-serif;
+  background:#f4f6f8;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+  margin:0
 }
-
-.card {
-  background: #fff;
-  padding: 20px;
-  border-radius: 14px;
-  width: calc(100% - 24px);
-  max-width: 340px;
-  box-shadow: 0 10px 25px rgba(0,0,0,.1);
+.card{
+  background:#fff;
+  padding:20px;
+  border-radius:14px;
+  width:calc(100% - 24px);
+  max-width:340px;
+  box-shadow:0 10px 25px rgba(0,0,0,.1)
 }
-
-.logo-carousel {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 80px;
-  margin-bottom: 10px;
-  position: relative;
+.logo-carousel{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:80px;
+  margin-bottom:10px;
+  position:relative
 }
-
-.logo {
-  max-height: 60px;
-  max-width: 180px;
-  position: absolute;
-  opacity: 0;
-  transition: opacity 0.6s ease;
+.logo{
+  max-height:60px;
+  max-width:180px;
+  position:absolute;
+  opacity:0;
+  transition:opacity .6s ease
 }
-
-.logo.active { opacity: 1; }
-
-h2 {
-  text-align: center;
-  margin: 10px 0 20px;
+.logo.active{opacity:1}
+h2{text-align:center;margin:10px 0 20px}
+input{
+  width:100%;
+  padding:12px;
+  margin-bottom:12px;
+  border-radius:8px;
+  border:1px solid #ccc;
+  font-size:15px
 }
-
-input {
-  width: 100%;
-  padding: 12px;
-  margin-bottom: 12px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  font-size: 15px;
+button{
+  width:100%;
+  padding:14px;
+  border:none;
+  border-radius:8px;
+  background:#4ca494;
+  color:#fff;
+  font-size:16px;
+  cursor:pointer
 }
-
-button {
-  width: 100%;
-  padding: 14px;
-  border: none;
-  border-radius: 8px;
-  background: #4ca494;
-  color: white;
-  font-size: 16px;
-  cursor: pointer;
+.footer{
+  text-align:center;
+  margin-top:14px;
+  font-size:12px;
+  color:#999
 }
-
-.footer {
-  text-align: center;
-  margin-top: 14px;
-  font-size: 12px;
-  color: #999;
+.error{
+  color:#c0392b;
+  text-align:center;
+  margin-top:10px;
+  display:none
 }
-
-.error {
-  color: #c0392b;
-  text-align: center;
-  margin-top: 10px;
-  display: none;
-}
+iframe{display:none}
 </style>
 </head>
 
@@ -109,6 +97,8 @@ button {
 
 </div>
 
+<iframe id="loginFrame"></iframe>
+
 <script>
 /* =========================
    CONFIG
@@ -116,62 +106,70 @@ button {
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwTZZReksD0TzEuB2xGDS8Iex2IxiXkfArpD3rUJ146-Zx9V3Nkua48-6siZSuzeELJIg/exec";
 
 /* =========================
-   LOGIN (ENVÍA CREDENCIALES)
+   LOGIN REAL (SIN CORS)
 ========================= */
-function login() {
+function login(){
 
   const user = usuario.value.trim();
   const pass = password.value.trim();
   const error = document.getElementById("error");
+  error.style.display="none";
 
-  error.style.display = "none";
-
-  if (!user || !pass) {
+  if(!user || !pass){
     mostrarError("Completa los datos");
     return;
   }
 
-  // Limpia sesiones previas
   localStorage.clear();
-  sessionStorage.clear();
 
-  fetch(SCRIPT_URL, {
-    method: "POST",
-    mode: "no-cors",                 // 🔑 necesario en GAS
-    headers: { "Content-Type": "text/plain" },
-    body: JSON.stringify({
-      action: "login",
-      usuario: user,
-      password: pass
-    })
-  })
-  .then(() => {
-    // Guardamos credenciales TEMPORALES
-    sessionStorage.setItem("auth_user", user);
-    sessionStorage.setItem("auth_time", Date.now());
+  const iframe = document.getElementById("loginFrame");
+  iframe.src =
+    SCRIPT_URL +
+    "?action=login" +
+    "&usuario=" + encodeURIComponent(user) +
+    "&password=" + encodeURIComponent(pass);
 
-    // El menú validará realmente
-    window.location.href = "menu.html";
-  })
-  .catch(() => {
-    mostrarError("No se pudo conectar con el servidor");
-  });
+  window.addEventListener("message", recibirLogin, { once:true });
 }
 
-function mostrarError(msg) {
+/* =========================
+   RESPUESTA DEL SCRIPT
+========================= */
+function recibirLogin(e){
+
+  const data = e.data;
+
+  if(!data || !data.ok){
+    mostrarError(data?.error || "Credenciales incorrectas");
+    return;
+  }
+
+  // ✅ SESIÓN VÁLIDA
+  localStorage.setItem("usuario", JSON.stringify({
+    usuario: data.usuario,
+    rol: data.rol
+  }));
+
+  window.location.href = "menu.html";
+}
+
+function mostrarError(msg){
   const error = document.getElementById("error");
   error.innerText = msg;
-  error.style.display = "block";
+  error.style.display="block";
 }
 
 /* =========================
    CARRUSEL LOGOS
 ========================= */
-let logos = document.querySelectorAll('.logo');
-let index = 0;
-setInterval(() => {
+let logos=document.querySelectorAll('.logo');
+let index=0;
+setInterval(()=>{
   logos[index].classList.remove('active');
-  index = (index + 1) % logos.length;
+  index=(index+1)%logos.length;
   logos[index].classList.add('active');
-}, 2500);
+},2500);
 </script>
+
+</body>
+</html>
