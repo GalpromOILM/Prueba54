@@ -101,7 +101,6 @@ button:active { opacity: 0.9; }
 
   <h2>Acceso</h2>
 
-  <!-- 🔐 LOGIN CORRECTO -->
   <input type="text" id="usuario" placeholder="Usuario">
   <input type="password" id="password" placeholder="Contraseña">
 
@@ -119,7 +118,7 @@ button:active { opacity: 0.9; }
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwTZZReksD0TzEuB2xGDS8Iex2IxiXkfArpD3rUJ146-Zx9V3Nkua48-6siZSuzeELJIg/exec";
 
 /* =========================
-   LOGIN (USUARIO + PASSWORD)
+   LOGIN (SIN CORS)
 ========================= */
 function login() {
   const user = usuario.value.trim();
@@ -135,24 +134,17 @@ function login() {
 
   fetch(SCRIPT_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    mode: "no-cors",
+    headers: { "Content-Type": "text/plain" },
     body: JSON.stringify({
       action: "login",
       usuario: user,
       password: pass
     })
   })
-  .then(r => r.json())
-  .then(res => {
-    if (!res.ok) {
-      error.innerText = "Usuario o contraseña incorrectos";
-      error.style.display = "block";
-      return;
-    }
-
+  .then(() => {
+    // Guardamos sesión local (el Script valida)
     localStorage.setItem("usuario", JSON.stringify({
-      nombre: res.nombre,
-      rol: res.rol,
       usuario: user
     }));
 
