@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+
+<style>
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 11px;
+    color: #000;
+    margin: 0;
+    padding: 20px;
+  }
+
+  /* ===== HEADER ===== */
+  .header {
+    width: 100%;
+    border-bottom: 2px solid #333;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+  }
+
+  .header-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .logo {
+    width: 140px;
+  }
+
+  .empresa-datos {
+    font-size: 10px;
+    text-align: right;
+    line-height: 1.4;
+  }
+
+  h1 {
+    text-align: center;
+    font-size: 16px;
+    margin: 12px 0 4px;
+  }
+
+  .folio {
+    text-align: center;
+    font-weight: bold;
+    font-size: 12px;
+  }
+
+  /* ===== INFO ===== */
+  .info {
+    margin-top: 12px;
+    margin-bottom: 14px;
+  }
+
+  .info p {
+    margin: 4px 0;
+  }
+
+  /* ===== TABLA PRODUCTOS ===== */
+  table.productos {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+  }
+
+  table.productos th,
+  table.productos td {
+    border: 1px solid #000;
+    padding: 6px;
+    font-size: 10px;
+  }
+
+  table.productos th {
+    background: #f0f0f0;
+    text-align: left;
+  }
+
+  /* ===== FOTOS ===== */
+  .fotos {
+    margin-top: 16px;
+  }
+
+  .foto {
+    width: 100%;
+    max-width: 260px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+  }
+
+  /* ===== FIRMA ===== */
+  .firma {
+    margin-top: 20px;
+  }
+
+  .firma img {
+    max-width: 200px;
+    border-bottom: 1px solid #000;
+  }
+
+  .firma-texto {
+    font-size: 10px;
+    margin-top: 4px;
+  }
+
+  /* ===== FOOTER ===== */
+  .footer {
+    margin-top: 20px;
+    font-size: 9px;
+    text-align: center;
+    color: #555;
+  }
+</style>
+</head>
+
+<body>
+
+<!-- ===== HEADER ===== -->
+<div class="header">
+  <table class="header-table">
+    <tr>
+      <td>
+        <img class="logo" src="<?= empresa.logo ?>">
+      </td>
+      <td class="empresa-datos">
+        <b><?= empresa.nombre ?></b><br>
+        <?= empresa.direccion ?><br>
+        Tel: <?= empresa.telefono ?><br>
+        <?= empresa.correo ?>
+      </td>
+    </tr>
+  </table>
+
+  <h1>REMISIÓN DE ENTREGA</h1>
+  <div class="folio">Folio: <?= folio ?></div>
+</div>
+
+<!-- ===== INFO CLIENTE ===== -->
+<div class="info">
+  <p><b>Cliente:</b> <?= cliente ?></p>
+  <p><b>Dirección:</b> <?= direccion ?></p>
+  <p><b>Fecha:</b> <?= fecha ?></p>
+  <p><b>Agente:</b> <?= agente ?></p>
+</div>
+
+<!-- ===== PRODUCTOS ===== -->
+<table class="productos">
+  <tr>
+    <th>Producto</th>
+    <th width="80">Cantidad</th>
+    <th>Observaciones</th>
+  </tr>
+
+  <? productos.forEach(p => { ?>
+  <tr>
+    <td><?= p.nombre ?></td>
+    <td><?= p.cantidad ?></td>
+    <td><?= p.observaciones || "" ?></td>
+  </tr>
+  <? }) ?>
+</table>
+
+<!-- ===== FOTOS ===== -->
+<? if (fotos && fotos.length) { ?>
+<div class="fotos">
+  <h3>Evidencia fotográfica</h3>
+  <? fotos.forEach(f => { ?>
+    <img class="foto" src="<?= f ?>">
+  <? }) ?>
+</div>
+<? } ?>
+
+<!-- ===== FIRMA ===== -->
+<? if (firma) { ?>
+<div class="firma">
+  <p><b>Firma del cliente</b></p>
+  <img src="<?= firma ?>">
+  <div class="firma-texto">Nombre y firma de conformidad</div>
+</div>
+<? } ?>
+
+<!-- ===== FOOTER ===== -->
+<div class="footer">
+  Documento generado automáticamente – <?= empresa.nombre ?>
+</div>
+
+</body>
+</html>

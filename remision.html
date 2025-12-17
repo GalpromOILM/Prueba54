@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Remisión de Entrega</title>
+
+<style>
+*{box-sizing:border-box}
+body{font-family:Arial,Helvetica,sans-serif;background:#f4f6f8;margin:0;padding:15px}
+.container{max-width:600px;margin:auto;background:#fff;border-radius:12px;padding:16px;box-shadow:0 4px 12px rgba(0,0,0,.08)}
+.encabezado{text-align:center;margin-bottom:12px}
+.encabezado img{max-width:280px;max-height:120px;object-fit:contain}
+.folio{font-size:14px;font-weight:bold;margin-top:6px}
+.estado{font-size:13px;color:#e67e22;margin-top:4px}
+h2{text-align:center;margin-top:6px}
+label{font-weight:bold;display:block;margin-top:14px}
+input,select,textarea,button{
+  width:100%;padding:12px;margin-top:6px;
+  border-radius:8px;border:1px solid #ccc;font-size:15px
+}
+textarea{resize:vertical}
+button{background:#4ca494;color:#fff;border:none;cursor:pointer}
+.productos{margin-top:10px}
+.producto{border:1px solid #ddd;border-radius:8px;padding:10px;margin-top:10px}
+.firma-box{border:2px dashed #aaa;border-radius:8px;margin-top:10px}
+canvas{width:100%;height:180px}
+.bienvenida{text-align:center;font-weight:bold}
+.footer-agente{text-align:center;font-size:12px;color:#999;margin-top:20px}
+.actions{display:flex;gap:10px;margin-top:10px}
+.actions button{flex:1}
+.eliminar{background:#e74c3c;font-size:14px}
+.preview{display:flex;flex-wrap:wrap}
+.preview img{width:80px;margin:6px;border-radius:6px;border:1px solid #ccc}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+</style>
+</head>
+
+<body>
+
+<script>
+/* =========================
+   PROTECCIÓN + PARÁMETROS
+========================= */
+const usuario = JSON.parse(localStorage.getItem("usuario"));
+if (!usuario || !usuario.usuario || !usuario.rol) {
+  window.location.href = "index.html";
+}
+
+const params = new URLSearchParams(window.location.search);
+const folioPendiente = params.get("folio");
+</script>
+
+<div class="container">
+
+  <div class="encabezado">
+    <img id="logoEmpresa">
+    <div class="folio" id="folio"></div>
+    <div class="estado">Estado: Pendiente</div>
+  </div>
+
+  <div class="bienvenida" id="bienvenida"></div>
+  <h2>Remisión de Entrega</h2>
+
+  <label>Empresa</label>
+  <select id="empresa">
+    <option value="empresa1">Galprom</option>
+    <option value="empresa2">Dicomete</option>
+    <option value="empresa3">Metahnos</option>
+  </select>
+
+  <label>Horario de entrega</label>
+  <div class="grid-2">
+    <select id="horaInicio"></select>
+    <select id="horaFin"></select>
+  </div>
+
+  <label>Cliente</label>
+  <input id="cliente">
+
+  <label>Correo</label>
+  <input type="email" id="correo">
+
+  <label>Dirección</label>
+  <textarea id="direccion" rows="3"></textarea>
+
+  <label>Productos</label>
+  <div id="productos"></div>
+  <button onclick="agregarProducto()">➕ Agregar producto</button>
+
+  <label>Firma del cliente</label>
+  <div class="firma-box">
+    <canvas id="firma"></canvas>
+  </div>
+
+  <div class="actions">
+    <button onclick="limpiarFirma()">Limpiar firma</button>
+  </div>
+
+  <div class="actions">
+    <button onclick="cerrarEntrega()">Cerrar entrega</button>
+  </div>
+
+  <div class="footer-agente" id="footerAgente"></div>
+</div>
+
+<script>
+/* =========================
+   CONFIG
+========================= */
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwTZZReksD0TzEuB2xGDS8Iex2IxiXkfArpD3rUJ146-Zx9V3Nkua48-6siZSuzeELJIg/exec";
+
+bienvenida.innerText = "Buen día, " + usuario.usuario;
+footerAgente.innerText = "Elaborado por: " + usuario.usuario;
+
+/* =========================
+   EMPRESAS
+========================= */
+const empresas = {
+  empresa1:{logo:"logos/empresa1.png",color:"#4ca494"},
+  empresa2:{logo:"logos/empresa2.png",color:"#3498db"},
+  empresa3:{logo:"logos/empresa3.png",color:"#9b59b6"}
+};
+
+empresa.onchange = () => {
+  logoEmpresa.src = empresas[empresa.value].logo;
+  document.querySelectorAll("button").forEach(b=>b.style.background=empresas[empresa.value].color);
+};
+empresa.onchange();
+
+/* =========================
+   HORAS
+========================= */
+function cargarHoras(){
+  horaInicio.innerHTML = `<option value="">Inicio</option>`;
+  horaFin.innerHTML = `<option value="">Término</option>`;
+  for(let h=6;h<=22;h++){
+    ["00","30"].forEach(m=>{
+      const v = String(h).padStart(2,"0")+":"+m;
+      horaInicio.innerHTML += `<option value="${v}">${v}</option>`;
+      horaFin.innerHTML += `<option value="${v}">${v}</option>`;
+    });
+  }
+}
+cargarHoras();
+
+/* =========================
+   FOLIO / PENDIENTE
+========================= */
+let pendientes = JSON.parse(localStorage.getItem("pendientes")) || [];
+let folioLocal;
+
+if (folioPendiente) {
+  const r = pendientes.find(p => p.folio === folioPendiente);
+  if (r) {
+    folioLocal = r.folio;
+    empresa.value = r.empresa;
+    cliente.value = r.cliente;
+    correo.value = r.correo;
+    direccion.value = r.direccion;
+
+    productos.innerHTML = "";
+    r.productos.forEach(p=>{
+      const d=document.createElement("div");
+      d.className="producto";
+      d.innerHTML=`
+        <input value="${p.nombre}">
+        <input type="number" value="${p.cantidad}">
+        <input value="${p.observaciones}">
+        <button class="eliminar" onclick="this.parentNode.remove()">Eliminar</button>
+      `;
+      productos.appendChild(d);
+    });
+  }
+} else {
+  folioLocal = localStorage.getItem("folioLocal") || "TMP-" + Date.now();
+}
+
+localStorage.setItem("folioLocal", folioLocal);
+folio.innerText = "Folio: " + folioLocal;
+
+/* =========================
+   FIRMA
+========================= */
+const canvas = document.getElementById("firma");
+const ctx = canvas.getContext("2d");
+canvas.width = canvas.offsetWidth;
+canvas.height = 180;
+let draw=false;
+
+canvas.addEventListener("touchstart",()=>draw=true);
+canvas.addEventListener("touchend",()=>{draw=false;ctx.beginPath()});
+canvas.addEventListener("touchmove",e=>{
+  if(!draw) return;
+  const r=canvas.getBoundingClientRect(),t=e.touches[0];
+  ctx.lineWidth=2;ctx.lineCap="round";
+  ctx.lineTo(t.clientX-r.left,t.clientY-r.top);
+  ctx.stroke();ctx.beginPath();
+  ctx.moveTo(t.clientX-r.left,t.clientY-r.top);
+  e.preventDefault();
+});
+
+function limpiarFirma(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+}
+
+/* =========================
+   PRODUCTOS
+========================= */
+function agregarProducto(){
+  const d=document.createElement("div");
+  d.className="producto";
+  d.innerHTML=`
+    <input placeholder="Producto">
+    <input type="number" placeholder="Cantidad">
+    <input placeholder="Observaciones">
+    <button class="eliminar" onclick="this.parentNode.remove()">Eliminar</button>
+  `;
+  productos.appendChild(d);
+}
+agregarProducto();
+
+/* =========================
+   GUARDAR PENDIENTE
+========================= */
+function guardarPendiente(){
+  let pendientes = JSON.parse(localStorage.getItem("pendientes")) || [];
+  pendientes = pendientes.filter(p => p.folio !== folioLocal);
+  pendientes.push({
+    folio:folioLocal,
+    empresa:empresa.value,
+    cliente:cliente.value,
+    correo:correo.value,
+    direccion:direccion.value,
+    productos:[...document.querySelectorAll(".producto")].map(p=>({
+      nombre:p.children[0].value,
+      cantidad:p.children[1].value,
+      observaciones:p.children[2].value
+    })),
+    usuario,
+    timestamp:Date.now()
+  });
+  localStorage.setItem("pendientes", JSON.stringify(pendientes));
+}
+
+/* =========================
+   ENVIAR
+========================= */
+async function cerrarEntrega(){
+
+  if(!horaInicio.value || !horaFin.value){
+    alert("Selecciona el horario");
+    return;
+  }
+
+  if(horaFin.value <= horaInicio.value){
+    alert("La hora de término debe ser mayor");
+    return;
+  }
+
+  const img = ctx.getImageData(0,0,canvas.width,canvas.height).data;
+  if([...img].every(v=>v===0)){
+    alert("La firma es obligatoria");
+    return;
+  }
+
+  await fetch(SCRIPT_URL,{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body:JSON.stringify({
+      action:"guardarRemision",
+      remision:{
+        empresa:empresa.value,
+        cliente:cliente.value,
+        correo:correo.value,
+        direccion:direccion.value,
+        usuario,
+        estado:"entregada"
+      }
+    })
+  });
+
+  let pendientes = JSON.parse(localStorage.getItem("pendientes")) || [];
+  pendientes = pendientes.filter(p => p.folio !== folioLocal);
+  localStorage.setItem("pendientes", JSON.stringify(pendientes));
+
+  localStorage.removeItem("folioLocal");
+  location.reload();
+}
+
+window.addEventListener("beforeunload", guardarPendiente);
+</script>
+
+</body>
+</html>
+
+

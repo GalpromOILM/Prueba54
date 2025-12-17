@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Remisiones Entregadas</title>
+<style>
+body{font-family:Arial,Helvetica,sans-serif;background:#f4f6f8;margin:0;padding:15px}
+.container{max-width:700px;margin:auto;background:#fff;border-radius:12px;padding:16px;box-shadow:0 4px 12px rgba(0,0,0,.08)}
+h2{text-align:center;margin-top:0}
+.card{border:1px solid #ddd;border-radius:10px;padding:12px;margin-top:12px}
+.folio{font-weight:bold}
+.meta{font-size:13px;color:#555;margin-top:4px}
+.actions{display:flex;gap:8px;margin-top:10px}
+button{flex:1;padding:10px;border:none;border-radius:8px;font-size:14px;color:#fff;background:#4ca494}
+.sec{background:#95a5a6}
+.empty{text-align:center;color:#777;margin-top:40px}
+.footer{margin-top:20px;text-align:center;font-size:12px;color:#999}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h2>Remisiones Entregadas</h2>
+  <div id="lista"></div>
+  <div class="footer" id="footer"></div>
+</div>
+
+<script>
+const lista = document.getElementById('lista');
+const entregadas = JSON.parse(localStorage.getItem('entregadas')) || [];
+
+if(entregadas.length === 0){
+  lista.innerHTML = '<div class="empty">No hay remisiones entregadas</div>';
+}else{
+  entregadas.slice().reverse().forEach(r=>{
+    const div = document.createElement('div');
+    div.className = 'card';
+    div.innerHTML = `
+      <div class="folio">Folio: ${r.folio}</div>
+      <div class="meta">Empresa: ${r.empresa}</div>
+      <div class="meta">Cliente: ${r.cliente || 'Sin nombre'}</div>
+      <div class="meta">Fecha: ${r.fechaEntrega}</div>
+      <div class="actions">
+        <button onclick="verFirma('${r.folio}')">Firma</button>
+        <button class="sec" onclick="verDetalle('${r.folio}')">Detalle</button>
+        <button onclick="verPDF('${r.folio}')">PDF</button>
+      </div>
+    `;
+    lista.appendChild(div);
+  });
+}
+
+function verFirma(folio){
+  const r = entregadas.find(x=>x.folio===folio);
+  if(!r?.firma){ alert('Sin firma'); return; }
+  const w = window.open();
+  w.document.write(`<img src="${r.firma}" style="width:100%">`);
+}
+
+function verDetalle(folio){
+  const r = entregadas.find(x=>x.folio===folio);
+  alert(JSON.stringify(r,null,2));
+}
+
+function verPDF(folio){
+  const r = entregadas.find(x=>x.folio===folio);
+  if(!r){ alert('Remisión no encontrada'); return; }
+  localStorage.setItem('remisionPDF', JSON.stringify(r));
+  window.location.href = 'pdf.html';
+}
+
+// Pie con agente
+const usuario = JSON.parse(localStorage.getItem('usuario'));
+if(usuario?.nombre){
+  document.getElementById('footer').innerText = 'Buen día, ' + usuario.nombre;
+}
+</script>
+</body>
+</html>

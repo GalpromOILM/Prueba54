@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Remisiones Pendientes</title>
+<style>
+body{font-family:Arial,Helvetica,sans-serif;background:#f4f6f8;margin:0;padding:15px}
+.container{max-width:600px;margin:auto;background:#fff;border-radius:12px;padding:16px;box-shadow:0 4px 12px rgba(0,0,0,.08);box-sizing:border-box}
+h2{text-align:center;margin-top:0}
+.item{border:1px solid #ddd;border-radius:10px;padding:12px;margin-top:12px}
+.item strong{display:block}
+button{width:100%;padding:12px;margin-top:10px;border:none;border-radius:8px;background:#4ca494;color:#fff;font-size:16px}
+.vacio{text-align:center;color:#777;margin-top:30px}
+</style>
+</head>
+<body>
+<div class="container">
+  <h2>Remisiones pendientes</h2>
+  <div id="lista"></div>
+</div>
+
+<script>
+const pendientes = JSON.parse(localStorage.getItem('pendientes')) || [];
+const lista = document.getElementById('lista');
+
+if(pendientes.length===0){
+  lista.innerHTML = '<div class="vacio">No hay remisiones pendientes</div>';
+  setTimeout(()=>window.location.href='remision.html',1500);
+}
+
+pendientes.forEach(r=>{
+  const div=document.createElement('div');
+  div.className='item';
+  div.innerHTML=`
+    <strong>Folio:</strong> ${r.folio}<br>
+    <strong>Cliente:</strong> ${r.cliente || 'Sin nombre'}<br>
+    <strong>Empresa:</strong> ${r.empresa}
+    <button onclick="continuar('${r.folio}')">Continuar</button>
+    <button onclick="borrar('${r.folio}')" style="background:#e74c3c">Cancelar / Borrar</button>
+  `;
+  lista.appendChild(div);
+});
+
+function continuar(folio){
+  window.location.href = 'remision.html?folio='+folio;
+}
+
+function borrar(folio){
+  if(!confirm('¿Seguro que deseas cancelar esta remisión?')) return;
+  let pendientes = JSON.parse(localStorage.getItem('pendientes')) || [];
+  pendientes = pendientes.filter(r => r.folio !== folio);
+  localStorage.setItem('pendientes', JSON.stringify(pendientes));
+  location.reload();
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Acceso Remisiones</title>
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+  font-family: Arial, sans-serif;
+  background: #f4f6f8;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+}
+
+.card {
+  background: #fff;
+  padding: 20px;
+  border-radius: 14px;
+  width: calc(100% - 24px);
+  max-width: 340px;
+  box-shadow: 0 10px 25px rgba(0,0,0,.1);
+}
+
+.logo-carousel {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 80px;
+  margin-bottom: 10px;
+  position: relative;
+}
+
+.logo {
+  max-height: 60px;
+  max-width: 180px;
+  position: absolute;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+
+.logo.active { opacity: 1; }
+
+h2 {
+  text-align: center;
+  margin: 10px 0 20px;
+}
+
+input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 15px;
+}
+
+button {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 8px;
+  background: #4ca494;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+button:active { opacity: 0.9; }
+
+.footer {
+  text-align: center;
+  margin-top: 14px;
+  font-size: 12px;
+  color: #999;
+}
+
+.error {
+  color: #c0392b;
+  text-align: center;
+  margin-top: 10px;
+  display: none;
+}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+
+  <div class="logo-carousel">
+    <img src="logos/empresa1.png" class="logo active">
+    <img src="logos/empresa2.png" class="logo">
+    <img src="logos/empresa3.png" class="logo">
+  </div>
+
+  <h2>Acceso</h2>
+
+  <!-- 🔐 LOGIN CORRECTO -->
+  <input type="text" id="usuario" placeholder="Usuario">
+  <input type="password" id="password" placeholder="Contraseña">
+
+  <button onclick="login()">Entrar</button>
+
+  <div class="footer">Elaborado por: OILM</div>
+  <div class="error" id="error">Datos incorrectos</div>
+
+</div>
+
+<script>
+/* =========================
+   CONFIG
+========================= */
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwTZZReksD0TzEuB2xGDS8Iex2IxiXkfArpD3rUJ146-Zx9V3Nkua48-6siZSuzeELJIg/exec";
+
+/* =========================
+   LOGIN (USUARIO + PASSWORD)
+========================= */
+function login() {
+  const user = usuario.value.trim();
+  const pass = password.value.trim();
+  const error = document.getElementById("error");
+  error.style.display = "none";
+
+  if (!user || !pass) {
+    error.innerText = "Completa los datos";
+    error.style.display = "block";
+    return;
+  }
+
+  fetch(SCRIPT_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      action: "login",
+      usuario: user,
+      password: pass
+    })
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (!res.ok) {
+      error.innerText = "Usuario o contraseña incorrectos";
+      error.style.display = "block";
+      return;
+    }
+
+    localStorage.setItem("usuario", JSON.stringify({
+      nombre: res.nombre,
+      rol: res.rol,
+      usuario: user
+    }));
+
+    window.location.href = "remision.html";
+  })
+  .catch(() => {
+    error.innerText = "Error de conexión";
+    error.style.display = "block";
+  });
+}
+
+/* =========================
+   CARRUSEL LOGOS
+========================= */
+let logos = document.querySelectorAll('.logo');
+let index = 0;
+setInterval(() => {
+  logos[index].classList.remove('active');
+  index = (index + 1) % logos.length;
+  logos[index].classList.add('active');
+}, 2500);
+</script>
+
+</body>
+</html>
