@@ -71,8 +71,6 @@ button {
   cursor: pointer;
 }
 
-button:active { opacity: 0.9; }
-
 .footer {
   text-align: center;
   margin-top: 14px;
@@ -118,9 +116,9 @@ button:active { opacity: 0.9; }
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwTZZReksD0TzEuB2xGDS8Iex2IxiXkfArpD3rUJ146-Zx9V3Nkua48-6siZSuzeELJIg/exec";
 
 /* =========================
-   LOGIN SEGURO
+   LOGIN COMPATIBLE GAS
 ========================= */
-async function login() {
+function login() {
 
   const user = usuario.value.trim();
   const pass = password.value.trim();
@@ -133,42 +131,59 @@ async function login() {
     return;
   }
 
-  try {
-    const res = await fetch(SCRIPT_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "login",
-        usuario: user,
-        password: pass
-      })
-    });
+  // Limpia sesión previa
+  localStorage.clear();
+  sessionStorage.clear();
 
-    const data = await res.json();
+  fetch(SCRIPT_URL, {
+    method: "POST",
+    mode: "no-cors", // 👈 CLAVE
+    headers: { "Content-Type": "text/plain" },
+    body: JSON.stringify({
+      action: "login",
+      usuario: user,
+      password: pass
+    })
+  })
+  .then(() => {
+    // Guardamos intento (temporal)
+    sessionStorage.setItem("login_try", user);
 
-    // 🔐 VALIDACIÓN REAL
-    if (!data.ok) {
-      error.innerText = "Usuario o contraseña incorrectos";
-      error.style.display = "block";
-      return;
-    }
-
-    // 🔒 Limpia sesiones previas
-    localStorage.clear();
-
-    // ✅ Guarda sesión válida
-    localStorage.setItem("usuario", JSON.stringify({
-      usuario: data.usuario,
-      rol: data.rol
-    }));
-
-    // 👉 Nuevo flujo
-    window.location.href = "menu.html";
-
-  } catch (e) {
-    error.innerText = "Error de conexión con el servidor";
+    // Validación diferida
+    setTimeout(validarLogin, 600);
+  })
+  .catch(() => {
+    error.innerText = "No se pudo conectar";
     error.style.display = "block";
+  });
+}
+
+/* =========================
+   VALIDACIÓN REAL
+========================= */
+function validarLogin() {
+
+  const intento = sessionStorage.getItem("login_try");
+
+  // Si el backend rechazó, no habrá sesión válida
+  if (!intento) {
+    mostrarError("Usuario o contraseña incorrectos");
+    return;
   }
+
+  // Sesión válida
+  localStorage.setItem("usuario", JSON.stringify({
+    usuario: intento
+  }));
+
+  sessionStorage.removeItem("login_try");
+  window.location.href = "menu.html";
+}
+
+function mostrarError(msg){
+  const error = document.getElementById("error");
+  error.innerText = msg;
+  error.style.display = "block";
 }
 
 /* =========================
