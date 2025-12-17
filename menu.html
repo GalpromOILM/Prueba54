@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Menú principal</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+  font-family:Arial,Helvetica,sans-serif;
+  background:#f4f6f8;
+  margin:0;
+  padding:15px
+}
+.container{
+  max-width:480px;
+  margin:auto;
+  background:#fff;
+  border-radius:14px;
+  padding:20px;
+  box-shadow:0 4px 14px rgba(0,0,0,.1)
+}
+h2{text-align:center;margin-bottom:10px}
+.bienvenida{text-align:center;font-weight:bold;margin-bottom:20px}
+button{
+  width:100%;
+  padding:16px;
+  margin-top:14px;
+  border:none;
+  border-radius:12px;
+  font-size:16px;
+  font-weight:bold;
+  cursor:pointer
+}
+.btn-nueva{background:#4ca494;color:#fff}
+.btn-pendientes{background:#f39c12;color:#fff}
+.btn-terminadas{background:#3498db;color:#fff}
+.contador{
+  text-align:center;
+  font-size:13px;
+  color:#666;
+  margin-top:6px
+}
+.footer{
+  text-align:center;
+  font-size:12px;
+  color:#999;
+  margin-top:25px
+}
+</style>
+</head>
+
+<body>
+
+<script>
+/* =========================
+   PROTECCIÓN
+========================= */
+const usuario = JSON.parse(localStorage.getItem("usuario"));
+if (!usuario || !usuario.usuario) {
+  window.location.href = "index.html";
+}
+</script>
+
+<div class="container">
+
+  <h2>Menú principal</h2>
+  <div class="bienvenida">
+    Bienvenido, <span id="user"></span>
+  </div>
+
+  <button class="btn-nueva" onclick="nuevaRemision()">
+    ➕ Nueva remisión
+  </button>
+
+  <button class="btn-pendientes" onclick="verPendientes()">
+    ⏸️ Remisiones pendientes
+  </button>
+  <div class="contador" id="pendientesCount"></div>
+
+  <button class="btn-terminadas" onclick="verTerminadas()">
+    ✅ Remisiones terminadas
+  </button>
+
+  <div class="footer">
+    Sesión iniciada como: <b id="rol"></b>
+  </div>
+</div>
+
+<script>
+user.innerText = usuario.usuario;
+rol.innerText = usuario.rol;
+
+/* =========================
+   CONTADOR DE PENDIENTES
+========================= */
+const pendientes = JSON.parse(localStorage.getItem("pendientes")) || [];
+pendientesCount.innerText =
+  pendientes.length > 0
+    ? `Tienes ${pendientes.length} pendiente(s)`
+    : "No hay remisiones pendientes";
+
+/* =========================
+   NAVEGACIÓN
+========================= */
+function nuevaRemision(){
+  localStorage.removeItem("folioLocal");
+  window.location.href = "remisiones.html";
+}
+
+function verPendientes(){
+  if(pendientes.length === 0){
+    alert("No hay remisiones pendientes");
+    return;
+  }
+  window.location.href = "pendientes.html";
+}
+
+function verTerminadas(){
+  window.location.href = "terminadas.html";
+}
+</script>
+
+</body>
+</html>
