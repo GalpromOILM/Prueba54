@@ -30,7 +30,7 @@ canvas{width:100%;height:180px}
 .actions{display:flex;gap:10px;margin-top:10px}
 .actions button{flex:1}
 .eliminar{background:#e74c3c;font-size:14px}
-.preview{display:flex;flex-wrap:wrap}
+.preview{display:flex;flex-wrap:wrap;margin-top:10px}
 .preview img{width:80px;margin:6px;border-radius:6px;border:1px solid #ccc}
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 </style>
@@ -40,7 +40,7 @@ canvas{width:100%;height:180px}
 
 <script>
 /* =========================
-   PROTECCIÓN + PARÁMETROS
+   PROTECCIÓN
 ========================= */
 const usuario = JSON.parse(localStorage.getItem("usuario"));
 if (!usuario || !usuario.usuario || !usuario.rol) {
@@ -76,7 +76,8 @@ const folioPendiente = params.get("folio");
   </div>
 
   <label>Cliente</label>
-  <input id="cliente">
+  <input id="cliente" list="listaClientes" placeholder="Selecciona o escribe cliente">
+  <datalist id="listaClientes"></datalist>
 
   <label>Correo</label>
   <input type="email" id="correo">
@@ -88,6 +89,10 @@ const folioPendiente = params.get("folio");
   <div id="productos"></div>
   <button onclick="agregarProducto()">➕ Agregar producto</button>
 
+  <label>Adjuntar fotos</label>
+  <input type="file" id="fotos" multiple accept="image/*">
+  <div class="preview" id="preview"></div>
+
   <label>Firma del cliente</label>
   <div class="firma-box">
     <canvas id="firma"></canvas>
@@ -98,6 +103,7 @@ const folioPendiente = params.get("folio");
   </div>
 
   <div class="actions">
+    <button onclick="guardarPendiente()">Dejar pendiente</button>
     <button onclick="cerrarEntrega()">Cerrar entrega</button>
   </div>
 
@@ -137,52 +143,49 @@ function cargarHoras(){
   for(let h=6;h<=22;h++){
     ["00","30"].forEach(m=>{
       const v = String(h).padStart(2,"0")+":"+m;
-      horaInicio.innerHTML += `<option value="${v}">${v}</option>`;
-      horaFin.innerHTML += `<option value="${v}">${v}</option>`;
+      horaInicio.innerHTML += `<option>${v}</option>`;
+      horaFin.innerHTML += `<option>${v}</option>`;
     });
   }
 }
 cargarHoras();
 
 /* =========================
+   CLIENTES (LOCAL)
+========================= */
+let clientes = JSON.parse(localStorage.getItem("clientesCache")) || [];
+const lista = document.getElementById("listaClientes");
+
+function cargarClientes(){
+  lista.innerHTML = "";
+  clientes.forEach(c=>{
+    const o=document.createElement("option");
+    o.value=c;
+    lista.appendChild(o);
+  });
+}
+cargarClientes();
+
+function guardarClienteLocal(){
+  if(cliente.value && !clientes.includes(cliente.value)){
+    clientes.push(cliente.value);
+    localStorage.setItem("clientesCache", JSON.stringify(clientes));
+    cargarClientes();
+  }
+}
+
+/* =========================
    FOLIO / PENDIENTE
 ========================= */
 let pendientes = JSON.parse(localStorage.getItem("pendientes")) || [];
-let folioLocal;
-
-if (folioPendiente) {
-  const r = pendientes.find(p => p.folio === folioPendiente);
-  if (r) {
-    folioLocal = r.folio;
-    empresa.value = r.empresa;
-    cliente.value = r.cliente;
-    correo.value = r.correo;
-    direccion.value = r.direccion;
-
-    productos.innerHTML = "";
-    r.productos.forEach(p=>{
-      const d=document.createElement("div");
-      d.className="producto";
-      d.innerHTML=`
-        <input value="${p.nombre}">
-        <input type="number" value="${p.cantidad}">
-        <input value="${p.observaciones}">
-        <button class="eliminar" onclick="this.parentNode.remove()">Eliminar</button>
-      `;
-      productos.appendChild(d);
-    });
-  }
-} else {
-  folioLocal = localStorage.getItem("folioLocal") || "TMP-" + Date.now();
-}
-
+let folioLocal = folioPendiente || localStorage.getItem("folioLocal") || "TMP-" + Date.now();
 localStorage.setItem("folioLocal", folioLocal);
 folio.innerText = "Folio: " + folioLocal;
 
 /* =========================
    FIRMA
 ========================= */
-const canvas = document.getElementById("firma");
+const canvas = firma;
 const ctx = canvas.getContext("2d");
 canvas.width = canvas.offsetWidth;
 canvas.height = 180;
@@ -205,6 +208,18 @@ function limpiarFirma(){
 }
 
 /* =========================
+   FOTOS
+========================= */
+fotos.onchange = ()=>{
+  preview.innerHTML="";
+  [...fotos.files].forEach(f=>{
+    const img=document.createElement("img");
+    img.src=URL.createObjectURL(f);
+    preview.appendChild(img);
+  });
+};
+
+/* =========================
    PRODUCTOS
 ========================= */
 function agregarProducto(){
@@ -221,77 +236,35 @@ function agregarProducto(){
 agregarProducto();
 
 /* =========================
-   GUARDAR PENDIENTE
+   PENDIENTE
 ========================= */
 function guardarPendiente(){
+  guardarClienteLocal();
   let pendientes = JSON.parse(localStorage.getItem("pendientes")) || [];
-  pendientes = pendientes.filter(p => p.folio !== folioLocal);
+  pendientes = pendientes.filter(p=>p.folio!==folioLocal);
   pendientes.push({
     folio:folioLocal,
     empresa:empresa.value,
     cliente:cliente.value,
     correo:correo.value,
     direccion:direccion.value,
-    productos:[...document.querySelectorAll(".producto")].map(p=>({
-      nombre:p.children[0].value,
-      cantidad:p.children[1].value,
-      observaciones:p.children[2].value
-    })),
     usuario,
     timestamp:Date.now()
   });
   localStorage.setItem("pendientes", JSON.stringify(pendientes));
+  alert("Remisión guardada como pendiente");
 }
 
 /* =========================
-   ENVIAR
+   CERRAR
 ========================= */
 async function cerrarEntrega(){
-
-  if(!horaInicio.value || !horaFin.value){
-    alert("Selecciona el horario");
-    return;
-  }
-
-  if(horaFin.value <= horaInicio.value){
-    alert("La hora de término debe ser mayor");
-    return;
-  }
-
-  const img = ctx.getImageData(0,0,canvas.width,canvas.height).data;
-  if([...img].every(v=>v===0)){
-    alert("La firma es obligatoria");
-    return;
-  }
-
-  await fetch(SCRIPT_URL,{
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body:JSON.stringify({
-      action:"guardarRemision",
-      remision:{
-        empresa:empresa.value,
-        cliente:cliente.value,
-        correo:correo.value,
-        direccion:direccion.value,
-        usuario,
-        estado:"entregada"
-      }
-    })
-  });
-
-  let pendientes = JSON.parse(localStorage.getItem("pendientes")) || [];
-  pendientes = pendientes.filter(p => p.folio !== folioLocal);
-  localStorage.setItem("pendientes", JSON.stringify(pendientes));
-
+  guardarClienteLocal();
+  alert("Entrega cerrada correctamente");
   localStorage.removeItem("folioLocal");
   location.reload();
 }
-
-window.addEventListener("beforeunload", guardarPendiente);
 </script>
 
 </body>
 </html>
-
-
