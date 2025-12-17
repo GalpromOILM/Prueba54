@@ -30,6 +30,8 @@ canvas{width:100%;height:180px}
 .actions button{flex:1}
 .eliminar{background:#e74c3c;font-size:14px}
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.preview{display:flex;flex-wrap:wrap}
+.preview img{width:80px;margin:6px;border-radius:6px;border:1px solid #ccc}
 </style>
 </head>
 
@@ -46,8 +48,6 @@ if (!usuario || !usuario.usuario || !usuario.rol) {
 
 const pendientes = JSON.parse(localStorage.getItem("pendientes")) || [];
 const params = new URLSearchParams(window.location.search);
-
-// Si hay pendientes y no viene a continuar una
 if (pendientes.length > 0 && !params.get("folio")) {
   window.location.href = "pendientes.html";
 }
@@ -78,7 +78,8 @@ if (pendientes.length > 0 && !params.get("folio")) {
   </div>
 
   <label>Cliente</label>
-  <input id="cliente">
+  <input id="cliente" list="listaClientes">
+  <datalist id="listaClientes"></datalist>
 
   <label>Correo</label>
   <input type="email" id="correo">
@@ -89,6 +90,10 @@ if (pendientes.length > 0 && !params.get("folio")) {
   <label>Productos</label>
   <div id="productos"></div>
   <button onclick="agregarProducto()">➕ Agregar producto</button>
+
+  <label>Fotos de evidencia</label>
+  <input type="file" accept="image/*" multiple capture="environment" onchange="cargarFotos(this)">
+  <div class="preview" id="previewFotos"></div>
 
   <label>Firma del cliente</label>
   <div class="firma-box">
@@ -126,22 +131,17 @@ footerAgente.innerText = "Elaborado por: " + usuario.usuario;
    EMPRESAS
 ========================= */
 const empresas = {
-  empresa1:{logo:"logos/empresa1.png",color:"#4ca494"},
-  empresa2:{logo:"logos/empresa2.png",color:"#3498db"},
-  empresa3:{logo:"logos/empresa3.png",color:"#9b59b6"}
+  empresa1:{logo:"logos/empresa1.png"},
+  empresa2:{logo:"logos/empresa2.png"},
+  empresa3:{logo:"logos/empresa3.png"}
 };
-
-empresa.onchange = () => {
-  logoEmpresa.src = empresas[empresa.value].logo;
-};
+empresa.onchange = () => logoEmpresa.src = empresas[empresa.value].logo;
 empresa.onchange();
 
 /* =========================
    HORAS
 ========================= */
 function cargarHoras(){
-  horaInicio.innerHTML = `<option value="">Inicio</option>`;
-  horaFin.innerHTML = `<option value="">Término</option>`;
   for(let h=6;h<=22;h++){
     ["00","30"].forEach(m=>{
       const v = String(h).padStart(2,"0")+":"+m;
@@ -153,6 +153,22 @@ function cargarHoras(){
 cargarHoras();
 
 /* =========================
+   CLIENTES (LOCAL)
+========================= */
+let clientes = JSON.parse(localStorage.getItem("clientes")) || [];
+function cargarClientes(){
+  listaClientes.innerHTML="";
+  clientes.forEach(c=>{
+    listaClientes.innerHTML+=`<option value="${c.nombre}">`;
+  });
+}
+cliente.onchange=()=>{
+  const c = clientes.find(x=>x.nombre===cliente.value);
+  if(c){ correo.value=c.correo; direccion.value=c.direccion; }
+};
+cargarClientes();
+
+/* =========================
    FOLIO
 ========================= */
 let folioLocal = localStorage.getItem("folioLocal") || "TMP-" + Date.now();
@@ -162,16 +178,14 @@ folio.innerText = "Folio: " + folioLocal;
 /* =========================
    FIRMA
 ========================= */
-const canvas = document.getElementById("firma");
-const ctx = canvas.getContext("2d");
-canvas.width = canvas.offsetWidth;
-canvas.height = 180;
+const canvas=document.getElementById("firma");
+const ctx=canvas.getContext("2d");
+canvas.width=canvas.offsetWidth;canvas.height=180;
 let draw=false;
-
 canvas.addEventListener("touchstart",()=>draw=true);
 canvas.addEventListener("touchend",()=>{draw=false;ctx.beginPath()});
 canvas.addEventListener("touchmove",e=>{
-  if(!draw) return;
+  if(!draw)return;
   const r=canvas.getBoundingClientRect(),t=e.touches[0];
   ctx.lineWidth=2;ctx.lineCap="round";
   ctx.lineTo(t.clientX-r.left,t.clientY-r.top);
@@ -179,24 +193,34 @@ canvas.addEventListener("touchmove",e=>{
   ctx.moveTo(t.clientX-r.left,t.clientY-r.top);
   e.preventDefault();
 });
+function limpiarFirma(){ctx.clearRect(0,0,canvas.width,canvas.height);}
 
-function limpiarFirma(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
+/* =========================
+   FOTOS
+========================= */
+let fotos=[];
+function cargarFotos(input){
+  [...input.files].forEach(f=>{
+    const r=new FileReader();
+    r.onload=e=>{
+      fotos.push(e.target.result);
+      previewFotos.innerHTML+=`<img src="${e.target.result}">`;
+    };
+    r.readAsDataURL(f);
+  });
 }
 
 /* =========================
    PRODUCTOS
 ========================= */
 function agregarProducto(){
-  const d=document.createElement("div");
-  d.className="producto";
-  d.innerHTML=`
+  productos.innerHTML+=`
+  <div class="producto">
     <input placeholder="Producto">
     <input type="number" placeholder="Cantidad">
     <input placeholder="Observaciones">
     <button class="eliminar" onclick="this.parentNode.remove()">Eliminar</button>
-  `;
-  productos.appendChild(d);
+  </div>`;
 }
 agregarProducto();
 
@@ -204,82 +228,47 @@ agregarProducto();
    PENDIENTES
 ========================= */
 function guardarPendiente(){
-  let pendientes = JSON.parse(localStorage.getItem("pendientes")) || [];
-  pendientes = pendientes.filter(p=>p.folio!==folioLocal);
-  pendientes.push({
-    folio:folioLocal,
-    empresa:empresa.value,
-    cliente:cliente.value,
-    correo:correo.value,
-    direccion:direccion.value,
-    productos:[...document.querySelectorAll(".producto")].map(p=>({
-      nombre:p.children[0].value,
-      cantidad:p.children[1].value,
-      observaciones:p.children[2].value
-    })),
-    usuario,
-    timestamp:Date.now()
-  });
-  localStorage.setItem("pendientes", JSON.stringify(pendientes));
-  alert("Remisión guardada como pendiente");
+  let p=JSON.parse(localStorage.getItem("pendientes"))||[];
+  p=p.filter(x=>x.folio!==folioLocal);
+  p.push({folio:folioLocal,empresa:empresa.value,cliente:cliente.value,correo:correo.value,direccion:direccion.value,productos:[],usuario});
+  localStorage.setItem("pendientes",JSON.stringify(p));
+  alert("Guardado como pendiente");
 }
-
 function verPendientes(){
-  const p = JSON.parse(localStorage.getItem("pendientes")) || [];
-  if(p.length===0){
-    alert("No hay remisiones pendientes");
-    return;
-  }
-  window.location.href="pendientes.html";
+  let p=JSON.parse(localStorage.getItem("pendientes"))||[];
+  if(!p.length)return alert("No hay pendientes");
+  location.href="pendientes.html";
 }
 
 /* =========================
    ENVIAR
 ========================= */
 async function cerrarEntrega(){
-
-  if(!horaInicio.value || !horaFin.value){
-    alert("Selecciona el horario");
-    return;
-  }
-
-  if(horaFin.value<=horaInicio.value){
-    alert("La hora de término debe ser mayor");
-    return;
-  }
-
-  const img=ctx.getImageData(0,0,canvas.width,canvas.height).data;
-  if([...img].every(v=>v===0)){
-    alert("La firma es obligatoria");
-    return;
-  }
-
   await fetch(SCRIPT_URL,{
     method:"POST",
-    headers:{ "Content-Type":"application/json" },
+    headers:{"Content-Type":"application/json"},
     body:JSON.stringify({
       action:"guardarRemision",
       remision:{
         empresa:empresa.value,
-        horario:{inicio:horaInicio.value,fin:horaFin.value},
         cliente:cliente.value,
         correo:correo.value,
         direccion:direccion.value,
+        horario:{inicio:horaInicio.value,fin:horaFin.value},
         usuario,
+        productos:[...document.querySelectorAll(".producto")].map(p=>({
+          nombre:p.children[0].value,
+          cantidad:p.children[1].value
+        })),
+        firma:canvas.toDataURL(),
+        fotos,
         estado:"entregada"
       }
     })
   });
-
-  let pendientes = JSON.parse(localStorage.getItem("pendientes")) || [];
-  pendientes = pendientes.filter(p=>p.folio!==folioLocal);
-  localStorage.setItem("pendientes", JSON.stringify(pendientes));
-
   localStorage.removeItem("folioLocal");
   location.reload();
 }
-
-window.addEventListener("beforeunload", guardarPendiente);
 </script>
 
 </body>
