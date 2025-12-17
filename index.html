@@ -116,28 +116,28 @@ button {
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwTZZReksD0TzEuB2xGDS8Iex2IxiXkfArpD3rUJ146-Zx9V3Nkua48-6siZSuzeELJIg/exec";
 
 /* =========================
-   LOGIN COMPATIBLE GAS
+   LOGIN (ENVÍA CREDENCIALES)
 ========================= */
 function login() {
 
   const user = usuario.value.trim();
   const pass = password.value.trim();
   const error = document.getElementById("error");
+
   error.style.display = "none";
 
   if (!user || !pass) {
-    error.innerText = "Completa los datos";
-    error.style.display = "block";
+    mostrarError("Completa los datos");
     return;
   }
 
-  // Limpia sesión previa
+  // Limpia sesiones previas
   localStorage.clear();
   sessionStorage.clear();
 
   fetch(SCRIPT_URL, {
     method: "POST",
-    mode: "no-cors", // 👈 CLAVE
+    mode: "no-cors",                 // 🔑 necesario en GAS
     headers: { "Content-Type": "text/plain" },
     body: JSON.stringify({
       action: "login",
@@ -146,41 +146,19 @@ function login() {
     })
   })
   .then(() => {
-    // Guardamos intento (temporal)
-    sessionStorage.setItem("login_try", user);
+    // Guardamos credenciales TEMPORALES
+    sessionStorage.setItem("auth_user", user);
+    sessionStorage.setItem("auth_time", Date.now());
 
-    // Validación diferida
-    setTimeout(validarLogin, 600);
+    // El menú validará realmente
+    window.location.href = "menu.html";
   })
   .catch(() => {
-    error.innerText = "No se pudo conectar";
-    error.style.display = "block";
+    mostrarError("No se pudo conectar con el servidor");
   });
 }
 
-/* =========================
-   VALIDACIÓN REAL
-========================= */
-function validarLogin() {
-
-  const intento = sessionStorage.getItem("login_try");
-
-  // Si el backend rechazó, no habrá sesión válida
-  if (!intento) {
-    mostrarError("Usuario o contraseña incorrectos");
-    return;
-  }
-
-  // Sesión válida
-  localStorage.setItem("usuario", JSON.stringify({
-    usuario: intento
-  }));
-
-  sessionStorage.removeItem("login_try");
-  window.location.href = "menu.html";
-}
-
-function mostrarError(msg){
+function mostrarError(msg) {
   const error = document.getElementById("error");
   error.innerText = msg;
   error.style.display = "block";
@@ -197,6 +175,3 @@ setInterval(() => {
   logos[index].classList.add('active');
 }, 2500);
 </script>
-
-</body>
-</html>
