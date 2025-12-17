@@ -143,9 +143,11 @@ function login() {
     })
   })
   .then(() => {
-    // Guardamos sesión local (el Script valida)
+    // Sesión local mínima (evita rebote)
     localStorage.setItem("usuario", JSON.stringify({
-      usuario: user
+      usuario: user,
+      nombre: user,
+      rol: "usuario"
     }));
 
     window.location.href = "remision.html";
