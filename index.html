@@ -114,12 +114,18 @@ iframe { display:none; }
 <iframe id="loginFrame"></iframe>
 
 <script>
+/* =========================
+   CONFIG
+========================= */
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx5dHMsNnLpHiy5LhdX-ynrSUiCO4ZeBBpjPS5P2lq5AkiTjW_4RgwW7qwqB6_p-acm/exec";
 
+/* =========================
+   LOGIN
+========================= */
 async function login() {
 
-  const user = usuario.value.trim();
-  const pass = password.value.trim();
+  const user = document.getElementById("usuario").value.trim();
+  const pass = document.getElementById("password").value.trim();
   const error = document.getElementById("error");
   error.style.display = "none";
 
@@ -138,7 +144,10 @@ async function login() {
       return;
     }
 
+    // Guardamos sesión
     localStorage.setItem("usuario", JSON.stringify(data));
+
+    // Redirige al menú
     window.location.href = "menu.html";
 
   } catch (e) {
@@ -146,5 +155,26 @@ async function login() {
   }
 }
 
+/* =========================
+   MOSTRAR ERROR
+========================= */
+function mostrarError(msg) {
+  const error = document.getElementById("error");
+  error.innerText = msg;
+  error.style.display = "block";
+}
 
+/* =========================
+   CARRUSEL LOGOS
+========================= */
+let logos = document.querySelectorAll('.logo');
+let index = 0;
+setInterval(() => {
+  logos[index].classList.remove('active');
+  index = (index + 1) % logos.length;
+  logos[index].classList.add('active');
+}, 2500);
+</script>
 
+</body>
+</html>
