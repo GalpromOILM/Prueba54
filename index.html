@@ -114,20 +114,13 @@ iframe { display:none; }
 <iframe id="loginFrame"></iframe>
 
 <script>
-/* =========================
-   CONFIG
-========================= */
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw_kfK5xUfLG2XcmyCGe0fc5EffIiH1OidxmJ-GrZVR1B5qvdU9gAIxKTLR8N8RKZrU/exec";
+const SCRIPT_URL = "https://script.google.com/macros/u/2/s/AKfycbw_kfK5xUfLG2XcmyCGe0fc5EffIiH1OidxmJ-GrZVR1B5qvdU9gAIxKTLR8N8RKZrU/exec";
 
-/* =========================
-   LOGIN REAL
-========================= */
-function login() {
+async function login() {
 
   const user = usuario.value.trim();
   const pass = password.value.trim();
   const error = document.getElementById("error");
-
   error.style.display = "none";
 
   if (!user || !pass) {
@@ -135,58 +128,30 @@ function login() {
     return;
   }
 
-  // Limpia sesión
-  localStorage.clear();
-  sessionStorage.clear();
+  try {
+    const url = `${SCRIPT_URL}?action=login&usuario=${encodeURIComponent(user)}&password=${encodeURIComponent(pass)}`;
 
-  const iframe = document.getElementById("loginFrame");
-  iframe.src = `${SCRIPT_URL}?action=login&usuario=${encodeURIComponent(user)}&password=${encodeURIComponent(pass)}`;
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if (!data.ok) {
+      mostrarError(data.error || "Acceso denegado");
+      return;
+    }
+
+    // ✅ Login válido
+    localStorage.setItem("usuario", JSON.stringify(data));
+
+    window.location.href = "menu.html";
+
+  } catch (e) {
+    mostrarError("Error de conexión");
+  }
 }
 
-/* =========================
-   RESPUESTA SCRIPT
-========================= */
-window.addEventListener("message", (e) => {
-
-  const data = e.data;
-
-  if (!data || typeof data.ok === "undefined") return;
-
-  if (!data.ok) {
-    mostrarError(data.error || "Acceso denegado");
-    return;
-  }
-
-  // Login válido
-  localStorage.setItem("usuario", JSON.stringify({
-    usuario: data.usuario,
-    rol: data.rol
-  }));
-
-  window.location.href = "menu.html";
-});
-
-/* =========================
-   HELPERS
-========================= */
 function mostrarError(msg) {
   const error = document.getElementById("error");
   error.innerText = msg;
   error.style.display = "block";
 }
-
-/* =========================
-   CARRUSEL LOGOS
-========================= */
-let logos = document.querySelectorAll('.logo');
-let index = 0;
-setInterval(() => {
-  logos[index].classList.remove('active');
-  index = (index + 1) % logos.length;
-  logos[index].classList.add('active');
-}, 2500);
 </script>
-
-</body>
-</html>
-
