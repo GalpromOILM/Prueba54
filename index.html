@@ -134,16 +134,11 @@ async function login() {
     const data = await res.json();
 
     if (!data.ok) {
-      mostrarError(data.error || "Credenciales inválidas");
+      mostrarError(data.error);
       return;
     }
 
-    // ✅ sesión válida
-    localStorage.setItem("usuario", JSON.stringify({
-      usuario: data.usuario,
-      rol: data.rol
-    }));
-
+    localStorage.setItem("usuario", JSON.stringify(data));
     window.location.href = "menu.html";
 
   } catch (e) {
@@ -151,10 +146,5 @@ async function login() {
   }
 }
 
-function mostrarError(msg) {
-  const error = document.getElementById("error");
-  error.innerText = msg;
-  error.style.display = "block";
-}
-</script>
+
 
